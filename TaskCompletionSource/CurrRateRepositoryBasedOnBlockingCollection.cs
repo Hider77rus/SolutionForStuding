@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace TaskCompletionSource
 {
-    public class CurrRateRepository : ICurrRateRepository
+    public class CurrRateRepositoryBasedOnBlockingCollection : ICurrRateRepository
     {
         private ConcurrentDictionary<string, decimal> _rates = new ConcurrentDictionary<string, decimal>();
         private readonly Dictionary<string,Task<decimal>> _requests = new Dictionary<string, Task<decimal>>();
         private readonly BlockingCollection<KeyValuePair<string,TaskCompletionSource<decimal>>> _queue = new BlockingCollection<KeyValuePair<string,TaskCompletionSource<decimal>>>();
         private readonly ICurrRateRepository _currRateStorage;
  
-        public CurrRateRepository(ICurrRateRepository currRateStorage)
+        public CurrRateRepositoryBasedOnBlockingCollection(ICurrRateRepository currRateStorage)
         {
             _currRateStorage = currRateStorage;
             Task.Run(QueueConsumer);
@@ -28,7 +28,7 @@ namespace TaskCompletionSource
             
             return await tcs.Task;
         }
- 
+        
         //Обработчик очереди
         private void QueueConsumer()
         {

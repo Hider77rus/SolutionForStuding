@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,27 +11,35 @@ namespace TaskCompletionSource
     {
         static async Task Main(string[] args)
         {
-            
-            
+           
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<ICurrRateRepository, CurrRateStorage>()
-                .Decorate<ICurrRateRepository, CurrRateRepository>()
+                //.Decorate<ICurrRateRepository, CurrRateRepositoryBasedOnBlockingCollection>()
+                .Decorate<ICurrRateRepository, CurrRateRepositoryBasedOnBufferBlock>()
                 .BuildServiceProvider();
 
             var repository = serviceProvider.GetService<ICurrRateRepository>();
            
             List<Task> tasks = new List<Task>();
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 1; i++)
             {
-                tasks.Add(Task.Run(async () =>
-                {
-                    var t = await repository.GetCurrRateAsync("RUR/USD");
-                    Console.WriteLine(t);
-                }));
+                tasks.Add(repository.GetCurrRateAsync("RUR/USD"));
             }
             
-            await Task.WhenAll(tasks);
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            
+            Console.ReadLine();
+
+            Console.WriteLine(await repository.GetCurrRateAsync("RUR/EUR"));
+            
             Console.ReadLine();
         }
     }

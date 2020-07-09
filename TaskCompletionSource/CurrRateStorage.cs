@@ -7,8 +7,7 @@ namespace TaskCompletionSource
 {
     public class CurrRateStorage : ICurrRateRepository
     {
-        
-        Dictionary<string, decimal> _currRates = new Dictionary<string, decimal>
+        readonly Dictionary<string, decimal> _currRates = new Dictionary<string, decimal>
         {
             ["RUR/USD"] = 75.0m,
             ["RUR/EUR"] = 85.3m
@@ -17,6 +16,8 @@ namespace TaskCompletionSource
         {
             Console.WriteLine($"Запрос {currency}");
             await Task.Delay(1500);
+            
+            //throw new Exception("Ошибка в базе");
             return _currRates[currency];
         }
     }
