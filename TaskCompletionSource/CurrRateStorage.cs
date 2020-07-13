@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using TaskCompletionSource.Interfaces;
 
 namespace TaskCompletionSource
 {
-    public class CurrRateStorage : ICurrRateRepository
+    public class CurrRateStorage : ICurrRateStorage
     {
         readonly Dictionary<string, decimal> _currRates = new Dictionary<string, decimal>
         {

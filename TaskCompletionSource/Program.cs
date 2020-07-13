@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using TaskCompletionSource.Interfaces;
 
 namespace TaskCompletionSource
 {
@@ -13,18 +14,21 @@ namespace TaskCompletionSource
         {
            
             var serviceProvider = new ServiceCollection()
-                .AddSingleton<ICurrRateRepository, CurrRateStorage>()
-                //.Decorate<ICurrRateRepository, CurrRateRepositoryBasedOnBlockingCollection>()
-                .Decorate<ICurrRateRepository, CurrRateRepositoryBasedOnBufferBlock>()
+                .AddSingleton<ICurrRateStorage, CurrRateStorage>()
+                //.AddSingleton<ICurrRateRepository, CurrRateRepositoryBasedOnBlockingCollection>()
+                //.AddSingleton<ICurrRateRepository, CurrRateRepositoryBasedOnBufferBlock>()
+                .AddSingleton<ICurrRateRepository, CurrRateRepositoryBasedOnChannels>()
                 .BuildServiceProvider();
 
             var repository = serviceProvider.GetService<ICurrRateRepository>();
            
             List<Task> tasks = new List<Task>();
 
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 10; i++)
             {
-                tasks.Add(repository.GetCurrRateAsync("RUR/USD"));
+                tasks.Add(repository.GetCurrRateAsync("RUR/USD").ContinueWith(async t => {
+                    Console.WriteLine(await t);
+                }));
             }
             
             try

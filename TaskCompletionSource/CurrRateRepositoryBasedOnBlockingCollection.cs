@@ -1,22 +1,18 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
+using TaskCompletionSource.Interfaces;
 
 namespace TaskCompletionSource
 {
-    public class CurrRateRepositoryBasedOnBlockingCollection : ICurrRateRepository
+    public class CurrRateRepositoryBasedOnBlockingCollection : CurrRateRepository, ICurrRateRepository
     {
-        private ConcurrentDictionary<string, decimal> _rates = new ConcurrentDictionary<string, decimal>();
-        private readonly Dictionary<string,Task<decimal>> _requests = new Dictionary<string, Task<decimal>>();
         private readonly BlockingCollection<KeyValuePair<string,TaskCompletionSource<decimal>>> _queue = new BlockingCollection<KeyValuePair<string,TaskCompletionSource<decimal>>>();
-        private readonly ICurrRateRepository _currRateStorage;
+
  
-        public CurrRateRepositoryBasedOnBlockingCollection(ICurrRateRepository currRateStorage)
+        public CurrRateRepositoryBasedOnBlockingCollection(ICurrRateStorage storage) : base(storage)
         {
-            _currRateStorage = currRateStorage;
             Task.Run(QueueConsumer);
         }
 
@@ -34,32 +30,7 @@ namespace TaskCompletionSource
         {
             foreach (var (currency, tcs) in _queue.GetConsumingEnumerable(CancellationToken.None))
             {
-                if (_rates.TryGetValue(currency,out var rate))
-                    tcs.SetResult(rate);
-                else
-                {
-                    Task<decimal> task;
-                    if (_requests.ContainsKey(currency))
-                    {
-                        task = _requests[currency];
-                    }
-                    else
-                    {
-                        task = Task.Run(async () =>
-                        {
-                            var rate = await _currRateStorage.GetCurrRateAsync(currency);
-                            _rates.TryAdd(currency, rate);
-                            return rate;
-                        });
-                        _requests[currency] = task;
-                    }
-
-                    Task.Run(async () =>
-                    {
-                        tcs.SetResult(await task);
-                        _requests.Remove(currency);
-                    });
-                }
+                SetTcsResult(currency,tcs);
             }
         }
     }

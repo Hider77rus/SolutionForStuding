@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace TaskCompletionSource
+namespace TaskCompletionSource.Interfaces
 {
     public interface ICurrRateRepository
     {
